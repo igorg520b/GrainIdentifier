@@ -30,11 +30,47 @@ VtkRepresentation::VtkRepresentation()
     actor_cube->SetMapper(mapper_cube);
     actor_cube->GetProperty()->SetRepresentationToWireframe();
     actor_cube->GetProperty()->SetColor(0.1,0.1,0.1);
+
+    // MPM
+    visualized_values_MPM->SetName("visualized_values_MPM");
+
+    points_polydata->SetPoints(points_MPM);
+    points_filter->SetInputData(points_polydata);
+
+    points_mapper->SetInputData(points_filter->GetOutput());
+
+    actor_MPM->SetMapper(points_mapper);
+    actor_MPM->PickableOff();
+    actor_MPM->GetProperty()->SetColor(0.1, 0.1, 0.1);
+    actor_MPM->GetProperty()->SetPointSize(0.4);
+
+    points_polydata->GetPointData()->AddArray(visualized_values_MPM);
+    points_polydata->GetPointData()->SetActiveScalars("visualized_values_MPM");
+    points_mapper->ScalarVisibilityOn();
+    points_mapper->SetColorModeToMapScalars();
+    points_mapper->UseLookupTableScalarRangeOn();
+    points_mapper->SetLookupTable(hueLut_pastel);
 }
 
 
 void VtkRepresentation::SynchronizeTopology()
 {
+    points_MPM->SetNumberOfPoints(gp->buffer.size());
+    visualized_values_MPM->SetNumberOfValues(gp->buffer.size());
+    spdlog::info("number of points {}",gp->buffer.size());
+
+    for(int i=0;i<gp->buffer.size();i++)
+    {
+        double x[3] {gp->buffer[i][0],gp->buffer[i][1],gp->buffer[i][2]};
+        points_MPM->SetPoint(i, x);
+        visualized_values_MPM->SetValue(i, gp->grainID[i]%40);
+    }
+    points_MPM->Modified();
+    visualized_values_MPM->Modified();
+    points_filter->Update();
+
+    return;
+
     points_mesh->SetNumberOfPoints(gp->vertices2.size());
 
     for(int i=0;i<gp->vertices2.size();i++)

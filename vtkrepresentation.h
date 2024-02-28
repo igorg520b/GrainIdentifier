@@ -10,6 +10,7 @@
 #include <vtkProperty.h>
 #include <vtkNamedColors.h>
 #include <vtkDoubleArray.h>
+#include <vtkFloatArray.h>
 #include <vtkIntArray.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkDataSetMapper.h>
@@ -30,7 +31,7 @@
 
 #include <vtkCubeSource.h>
 
-#include <vtkStructuredGrid.h>
+#include <vtkVertexGlyphFilter.h>
 
 #include "grainprocessor.h"
 
@@ -52,13 +53,20 @@ public:
     vtkNew<vtkDoubleArray> visualized_values;
 
     vtkNew<vtkPoints> points_mesh;
-    vtkNew<vtkPoints> points_MPM;
 
 
     // cube
     vtkNew<vtkCubeSource> source_cube;
     vtkNew<vtkDataSetMapper> mapper_cube;
     vtkNew<vtkActor> actor_cube;
+
+    // points
+    vtkNew<vtkPoints> points_MPM;
+    vtkNew<vtkPolyData> points_polydata;
+    vtkNew<vtkPolyDataMapper> points_mapper;
+    vtkNew<vtkVertexGlyphFilter> points_filter;
+    vtkNew<vtkFloatArray> visualized_values_MPM;
+    vtkNew<vtkActor> actor_MPM;
 
 
     static constexpr float lutArrayPastel[40][3] = {

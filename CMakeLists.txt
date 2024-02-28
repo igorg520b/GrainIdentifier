@@ -70,6 +70,9 @@ else()
             ${PROJECT_SOURCES}
             grainprocessor.h grainprocessor.cpp
             vtkrepresentation.h vtkrepresentation.cpp
+            bvh/bvhn.cpp bvh/bvhn.h
+            bvh/kdop24.cpp bvh/kdop24.h
+            bvh/SimplePool.h
         )
     endif()
 endif()
@@ -113,6 +116,7 @@ target_link_libraries(GrainIdentifier PRIVATE ${VTK_LIBRARIES})
 target_link_libraries(GrainIdentifier PRIVATE Eigen3::Eigen)
 
 target_link_directories(GrainIdentifier PRIVATE "/usr/local/lib")
+target_include_directories(GrainIdentifier PRIVATE bvh)
 target_link_libraries(GrainIdentifier PRIVATE gmsh)
 target_include_directories(GrainIdentifier PRIVATE "/home/s2/Projects-other/gmsh/api")
 

@@ -19,11 +19,17 @@ MainWindow::MainWindow(QWidget *parent)
     renderWindow->AddRenderer(renderer);
     setCentralWidget(qt_vtk_widget);
 
-    renderer->AddActor(representation.actor_grains);
+//    renderer->AddActor(representation.actor_grains);
     renderer->AddActor(representation.actor_cube);
+    renderer->AddActor(representation.actor_MPM);
 
     std::string fileName = "/home/s2/Documents/neper_data/1k.msh";
     gp.LoadMSH(fileName);
+
+    std::string pointsFile = "/home/s2/Projects-other/2m.h5";
+    gp.Load_Points_HDF5(pointsFile);
+
+    gp.IdentifyGrains();
     representation.SynchronizeTopology();
 }
 
