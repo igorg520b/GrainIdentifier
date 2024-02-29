@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     std::string fileName = "/home/s2/Documents/neper_data/1k.msh";
     gp.LoadMSH(fileName);
 
-    std::string pointsFile = "/home/s2/Projects-other/2m.h5";
+    std::string pointsFile = "/home/s2/Projects-other/80m.h5";
     gp.Load_Points_HDF5(pointsFile);
 
     gp.IdentifyGrains();

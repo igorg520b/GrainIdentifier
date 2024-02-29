@@ -100,7 +100,13 @@ void GrainProcessor::IdentifyGrains()
             if(broad_list.size()!=0)
             {
                 auto &p = broad_list.front();
-                grainID[i] = (short)tetra2[p.second->elem].grain;
+                short grain = (short)tetra2[p.second->elem].grain;
+                grainID[i] = grain;
+                if(grain < 0) spdlog::critical("elem {} grain {}",p.second->elem,grain);
+            }
+            else
+            {
+                spdlog::critical("broad list 0");
             }
         }
         if(grainID[i] == -1) { grainID[i] = 0; unidentifiedPoints++; }
@@ -222,7 +228,7 @@ void GrainProcessor::LoadMSH(std::string fileName)
                 elem[k] = mtags.at(nodeTagsInTetra[i*4+k]);
                 t.nds[k] = vertices[elem[k]];
             }
-            t.grain = elem[4] = j-1;
+            t.grain = elem[4] = j;
             elems.push_back(elem);
             tetra.push_back(t);
         }

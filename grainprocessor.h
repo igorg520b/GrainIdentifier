@@ -20,7 +20,7 @@ struct Tetra
 
 class GrainProcessor
 {
-    static constexpr float scale = 2;
+    static constexpr float scale = 3;
 
 public:
     void LoadMSH(std::string fileName);
