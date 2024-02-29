@@ -20,18 +20,21 @@ struct Tetra
 
 class GrainProcessor
 {
+    static constexpr float scale = 2;
+
 public:
     void LoadMSH(std::string fileName);
     void Load_Points_HDF5(std::string fileName);
     void IdentifyGrains();
     void Update_HDF5(std::string fileName);
+    static bool PointInsideTetrahedron(Eigen::Vector3f point, Eigen::Vector3f tetra[4]);
 
     std::vector<Eigen::Vector3f> vertices, vertices2;
     std::vector<std::array<int,5>> elems, elems2;   // 4 nodes + grain id
     std::vector<Tetra> tetra, tetra2;
 
     std::vector<std::array<float, 3>> buffer;
-    std::vector<int> grainID;
+    std::vector<short> grainID;
 
     std::vector<BVHN*> leaves;
     BVHN root;

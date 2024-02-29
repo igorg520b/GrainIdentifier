@@ -31,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     gp.IdentifyGrains();
     representation.SynchronizeTopology();
+    gp.Update_HDF5(pointsFile);
 }
 
 MainWindow::~MainWindow()

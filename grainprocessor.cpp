@@ -1,10 +1,35 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <cmath>
 
 #include <H5Cpp.h>
+#include <Eigen/Dense>
 
 #include "grainprocessor.h"
+
+
+void GrainProcessor::Update_HDF5(std::string fileName)
+{
+    H5::H5File file(fileName, H5F_ACC_RDWR);
+    hsize_t dims_grains[1] = {grainID.size()};
+    H5::DataSpace dataspace_points(1, dims_grains);
+    H5::DataSet dataset_points = file.createDataSet("GrainIDs", H5::PredType::NATIVE_INT16, dataspace_points);
+    dataset_points.write(grainID.data(), H5::PredType::NATIVE_INT16);
+    file.close();
+}
+
+
+bool GrainProcessor::PointInsideTetrahedron(Eigen::Vector3f point, Eigen::Vector3f t[4])
+{
+    constexpr float eps = 1e-3;
+    Eigen::Matrix3f M,B;
+    M << t[1]-t[0], t[2]-t[0], t[3]-t[0];
+    B = M.inverse();
+    point -= t[0];
+    Eigen::Vector3f b = B * point; // barycentric
+    return (b[0]>-eps && b[1]>-eps && b[2]>-eps && (b.sum() < 1+eps));
+}
 
 
 
@@ -32,12 +57,17 @@ void GrainProcessor::IdentifyGrains()
     spdlog::info("finished building bvh");
 
     // identify grains
+    int unidentifiedPoints = 0;
+    int problematicPoints = 0;
 
-//#pragma omp parallel for
-    for(int i=0;i<10;i++)
+#pragma omp parallel for reduction(+:unidentifiedPoints,problematicPoints)
+    for(int i=0;i<buffer.size();i++)
     {
         std::array<float, 3> &arr = buffer[i];
         Eigen::Vector3f v(arr[0],arr[1],arr[2]);
+        v*=scale;
+        for(int j=0;j<3;j++) v[j] = v[j] - floor(v[j]);
+
         BVHN bvhn;
         bvhn.isLeaf = true;
         bvhn.elem = -1;
@@ -47,16 +77,35 @@ void GrainProcessor::IdentifyGrains()
         std::vector<std::pair<BVHN*,BVHN*>> broad_list;
         broad_list.reserve(10);
         bvhn.Collide(&root, broad_list);
-        spdlog::info("pt {}; broad_lsit {}", i, broad_list.size());
+
+        grainID[i] = -1;
+        for(auto &pair : broad_list)
+        {
+            BVHN *bvhn2 = pair.second;
+            int idx = bvhn2->elem;
+            if(idx == -1) spdlog::critical("elem index -1");
+            Tetra &t = tetra2[idx];
+            bool result = PointInsideTetrahedron(v, t.nds);
+            if(result)
+            {
+                grainID[i] = (short)t.grain;
+                break;
+            }
+        }
+
+        if(grainID[i] == -1)
+        {
+            problematicPoints++;
+            spdlog::warn("node {}; grain {}; broad_list {}",i,grainID[i],broad_list.size());
+            if(broad_list.size()!=0)
+            {
+                auto &p = broad_list.front();
+                grainID[i] = (short)tetra2[p.second->elem].grain;
+            }
+        }
+        if(grainID[i] == -1) { grainID[i] = 0; unidentifiedPoints++; }
     }
-
-    spdlog::info("finished processing points");
-
-}
-
-void GrainProcessor::Update_HDF5(std::string fileName)
-{
-
+    spdlog::info("finished processing points; problematic {}; unidentified {}",problematicPoints, unidentifiedPoints);
 }
 
 
