@@ -32,7 +32,7 @@ void GrainProcessor::generate_cone(float diameter, float top, float angle, float
     float hb = H-ht;
 
     volume = M_PI*R*R*(hb+htt/3) - M_PI*r*r*r*tan_alpha/3;
-    spdlog::info("generating block {} x {} x {}", diameter, height, diameter);
+    spdlog::info("generating cone {} x {} x {}", diameter, height, diameter);
     buffer = GenerateBlock(diameter, height, diameter, n*vBlock/volume);
     spdlog::info("points generated {}", buffer.size());
 
@@ -121,6 +121,10 @@ void GrainProcessor::IdentifyGrains(const float scale)
     spdlog::info("building bvh");
     root.Build(leaves, 0);
     spdlog::info("finished building bvh");
+
+
+    grainID.resize(buffer.size());
+    spdlog::info("tetra2 {}; grainID {}", tetra2.size(), grainID.size());
 
     // identify grains
     int unidentifiedPoints = 0;
