@@ -32,10 +32,11 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void Process();
+    VtkRepresentation representation;
+
 private:
     Ui::MainWindow *ui;
-    GrainProcessor gp;
-    VtkRepresentation representation;
 
     // VTK
     vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;

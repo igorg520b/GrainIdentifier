@@ -7,15 +7,81 @@
 #include <Eigen/Dense>
 
 #include "grainprocessor.h"
+#include "poisson_disk_sampling.h"
 
 
-void GrainProcessor::Update_HDF5(std::string fileName)
+
+void GrainProcessor::generate_block(float bx, float by, float bz, int n)
 {
-    H5::H5File file(fileName, H5F_ACC_RDWR);
+    spdlog::info("generating block: {} x {} x {}; npts {}", bx, by, bz, n);
+    buffer = GenerateBlock(bx, by, bz, n);
+    spdlog::info("generating done");
+    volume = bx*by*bz;
+}
+
+void GrainProcessor::generate_cone(float diameter, float top, float angle, float height, int n)
+{
+    spdlog::info("generate_cone; diam {}; top {}; angle {}; height {}; n {}", diameter, top, angle, height, n);
+    float vBlock = diameter*diameter*height;
+    float tan_alpha = tan(M_PI*angle/180.);
+    float R = diameter/2;
+    float r = top/2;
+    float ht = (R-r)*tan_alpha;
+    float htt = R*tan_alpha;
+    float &H = height;
+    float hb = H-ht;
+
+    volume = M_PI*R*R*(hb+htt/3) - M_PI*r*r*r*tan_alpha/3;
+    spdlog::info("generating block {} x {} x {}", diameter, height, diameter);
+    buffer = GenerateBlock(diameter, height, diameter, n*vBlock/volume);
+    spdlog::info("points generated {}", buffer.size());
+
+    buffer.erase(
+        std::remove_if(buffer.begin(), buffer.end(), [hb,R,tan_alpha](std::array<float,3> &p){
+            float ph = p[1];
+            float pr = sqrt((p[0]-R)*(p[0]-R)+(p[2]-R)*(p[2]-R));
+            if(ph < hb) return (pr > R);
+            float h_limit = (R-pr)*tan_alpha;
+            return ((ph-hb) > h_limit);
+        }),
+        buffer.end());
+
+    spdlog::info("points after filtering {}", buffer.size());
+}
+
+
+std::vector<std::array<float, 3>> GrainProcessor::GenerateBlock(float bx, float by, float bz, int n)
+{
+    constexpr float magic_constant = 0.58;
+    const float bvol = bx*by*bz;
+    const float kRadius = cbrt(magic_constant*bvol/n);
+
+    const std::array<float, 3>kXMin{0, 0, 0};
+    const std::array<float, 3>kXMax{bx, by, bz};
+    std::vector<std::array<float, 3>> prresult = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax);
+    return prresult;
+}
+
+void GrainProcessor::Write_HDF5(std::string fileName)
+{
+    H5::H5File file(fileName, H5F_ACC_TRUNC);
+
     hsize_t dims_grains[1] = {grainID.size()};
-    H5::DataSpace dataspace_points(1, dims_grains);
-    H5::DataSet dataset_points = file.createDataSet("GrainIDs", H5::PredType::NATIVE_INT16, dataspace_points);
-    dataset_points.write(grainID.data(), H5::PredType::NATIVE_INT16);
+    H5::DataSpace dataspace_points_grains(1, dims_grains);
+    H5::DataSet dataset_grainids = file.createDataSet("GrainIDs", H5::PredType::NATIVE_INT16, dataspace_points_grains);
+    dataset_grainids.write(grainID.data(), H5::PredType::NATIVE_INT16);
+
+    hsize_t dims_points[2] = {buffer.size(), 3};
+    H5::DataSpace dataspace_points(2, dims_points);
+    hsize_t chunk_dims[2] = {1024*1024,3};
+    if(chunk_dims[0] > buffer.size()) chunk_dims[0] = std::max(buffer.size()/10,(size_t)1);
+    spdlog::info("chunk {}; dims_pts {}", chunk_dims[0], dims_points[0]);
+    H5::DSetCreatPropList proplist;
+    proplist.setChunk(2, chunk_dims);
+    proplist.setDeflate(7);
+    H5::DataSet dataset_points = file.createDataSet("Points_Raw", H5::PredType::NATIVE_FLOAT, dataspace_points, proplist);
+    dataset_points.write(buffer.data(), H5::PredType::NATIVE_FLOAT);
+
     file.close();
 }
 
@@ -33,7 +99,7 @@ bool GrainProcessor::PointInsideTetrahedron(Eigen::Vector3f point, Eigen::Vector
 
 
 
-void GrainProcessor::IdentifyGrains()
+void GrainProcessor::IdentifyGrains(const float scale)
 {
     spdlog::info("identify grains");
 
@@ -113,32 +179,6 @@ void GrainProcessor::IdentifyGrains()
     }
     spdlog::info("finished processing points; problematic {}; unidentified {}",problematicPoints, unidentifiedPoints);
 }
-
-
-void GrainProcessor::Load_Points_HDF5(std::string fileName)
-{
-    spdlog::info("ReadRawPoints {}",fileName);
-    if(!std::filesystem::exists(fileName)) throw std::runtime_error("error reading raw points file - no file");;
-
-    H5::H5File file(fileName, H5F_ACC_RDONLY);
-
-    H5::DataSet dataset = file.openDataSet("Points_Raw");
-    hsize_t dims[2] = {};
-    dataset.getSpace().getSimpleExtentDims(dims, NULL);
-    int nPoints = dims[0];
-    if(dims[1]!=3) throw std::runtime_error("error reading raw points file - dimensions mismatch");
-    spdlog::info("dims[0] {}, dims[1] {}", dims[0], dims[1]);
-
-    buffer.resize(nPoints);
-    dataset.read(buffer.data(), H5::PredType::NATIVE_FLOAT);
-    file.close();
-
-    grainID.resize(nPoints);
-
-    spdlog::info("Load_Points_HDF5 done");
-}
-
-
 
 
 

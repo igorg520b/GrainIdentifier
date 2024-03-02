@@ -70,7 +70,7 @@ void VtkRepresentation::SynchronizeTopology()
     points_filter->Update();
 
     return;
-
+/*
     points_mesh->SetNumberOfPoints(gp->vertices2.size());
 
     for(int i=0;i<gp->vertices2.size();i++)
@@ -93,7 +93,7 @@ void VtkRepresentation::SynchronizeTopology()
         visualized_values->SetValue(i, gp->elems2[i][4]%40);
     }
     ugrid->SetCells(VTK_TETRA, cellArray);
-
+*/
 
 }
 

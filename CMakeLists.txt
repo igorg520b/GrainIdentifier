@@ -104,21 +104,23 @@ if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(GrainIdentifier)
 endif()
 
-target_link_libraries(GrainIdentifier PRIVATE spdlog::spdlog)
+target_link_directories(GrainIdentifier PRIVATE "/usr/local/lib")
 
 target_compile_options(GrainIdentifier PRIVATE -fopenmp -Wno-stringop-overflow -Wno-invalid-offsetof)
 target_link_libraries(GrainIdentifier PRIVATE gomp)
 
+target_link_libraries(GrainIdentifier PRIVATE spdlog::spdlog)
 target_link_libraries(GrainIdentifier PRIVATE ${HDF5_LIBRARIES})
-target_include_directories(GrainIdentifier PRIVATE ${HDF5_INCLUDE_DIRS})
-
 target_link_libraries(GrainIdentifier PRIVATE ${VTK_LIBRARIES})
 target_link_libraries(GrainIdentifier PRIVATE Eigen3::Eigen)
-
-target_link_directories(GrainIdentifier PRIVATE "/usr/local/lib")
-target_include_directories(GrainIdentifier PRIVATE bvh)
 target_link_libraries(GrainIdentifier PRIVATE gmsh)
+
+
+
+
+target_include_directories(GrainIdentifier PRIVATE ${HDF5_INCLUDE_DIRS})
 target_include_directories(GrainIdentifier PRIVATE "/home/s2/Projects-other/gmsh/api")
+target_include_directories(GrainIdentifier PRIVATE bvh poisson_disk_sampling)
 
 vtk_module_autoinit(
   TARGETS GrainIdentifier
