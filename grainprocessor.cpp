@@ -82,6 +82,12 @@ void GrainProcessor::Write_HDF5(std::string fileName)
     H5::DataSet dataset_points = file.createDataSet("Points_Raw", H5::PredType::NATIVE_FLOAT, dataspace_points, proplist);
     dataset_points.write(buffer.data(), H5::PredType::NATIVE_FLOAT);
 
+    // write volume as attribute
+    hsize_t att_dim = 1;
+    H5::DataSpace att_dspace(1, &att_dim);
+    H5::Attribute att_volume = dataset_grainids.createAttribute("volume", H5::PredType::NATIVE_FLOAT, att_dspace);
+    att_volume.write(H5::PredType::NATIVE_FLOAT, &volume);
+    spdlog::info("volume written {}",volume);
     file.close();
 }
 
