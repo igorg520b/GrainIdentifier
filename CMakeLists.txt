@@ -73,6 +73,12 @@ else()
             bvh/bvhn.cpp bvh/bvhn.h
             bvh/kdop24.cpp bvh/kdop24.h
             bvh/SimplePool.h
+            2d/grainprocessor2d.h
+            2d/grainprocessor2d.cpp
+            2d/bvh2d/bvhn2d.h
+            2d/bvh2d/bvhn2d.cpp
+            2d/bvh2d/kdop8.h
+            2d/bvh2d/kdop8.cpp
         )
     endif()
 endif()
@@ -115,12 +121,9 @@ target_link_libraries(GrainIdentifier PRIVATE ${VTK_LIBRARIES})
 target_link_libraries(GrainIdentifier PRIVATE Eigen3::Eigen)
 target_link_libraries(GrainIdentifier PRIVATE gmsh)
 
-
-
-
 target_include_directories(GrainIdentifier PRIVATE ${HDF5_INCLUDE_DIRS})
 target_include_directories(GrainIdentifier PRIVATE "/home/s2/Projects-other/gmsh/api")
-target_include_directories(GrainIdentifier PRIVATE bvh poisson_disk_sampling)
+target_include_directories(GrainIdentifier PRIVATE bvh poisson_disk_sampling 2d 2d/bvh2d)
 
 vtk_module_autoinit(
   TARGETS GrainIdentifier

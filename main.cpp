@@ -7,6 +7,7 @@
 
 #include "mainwindow.h"
 #include "grainprocessor.h"
+#include "2d/grainprocessor2d.h"
 
 int main(int argc, char *argv[])
 {
@@ -22,7 +23,7 @@ int main(int argc, char *argv[])
 
     options.add_options()
         // point generation
-        ("s,shape", "Shape to generate (cone or block)", cxxopts::value<std::string>()->default_value("cone"))
+        ("s,shape", "Shape to generate (cone, block, 2d)", cxxopts::value<std::string>()->default_value("cone"))
         ("n,numberofpoints", "Make a set of N points for the simulation starting input", cxxopts::value<int>()->default_value("10000000"))
         ("o,output", "Output file name", cxxopts::value<std::string>()->default_value("raw_10m.h5"))
         ("m,msh", "Input file with grains", cxxopts::value<std::string>())
@@ -50,34 +51,43 @@ int main(int argc, char *argv[])
     std::string msh_file = option_parse_result["msh"].as<std::string>();
     float scale = option_parse_result["scale"].as<float>();
 
+    QApplication a(argc, argv);
+    MainWindow w;
     GrainProcessor gp;
-    gp.LoadMSH(msh_file);
+    GrainProcessor2D gp2d;
 
     if(shape == "cone")
     {
+        gp.LoadMSH(msh_file);
         float diameter = option_parse_result["diameter"].as<float>();
         float top = option_parse_result["top"].as<float>();
         float angle = option_parse_result["angle"].as<float>();
         float height = option_parse_result["height"].as<float>();
         gp.generate_cone(diameter, top, angle, height, n);
+        gp.IdentifyGrains(scale);
+        gp.Write_HDF5(output_file);
     }
     else if(shape == "block")
     {
+        gp.LoadMSH(msh_file);
         float bx = option_parse_result["bx"].as<float>();
         float by = option_parse_result["by"].as<float>();
         float bz = option_parse_result["bz"].as<float>();
         gp.generate_block(bx, by, bz, n);
+        gp.IdentifyGrains(scale);
+        gp.Write_HDF5(output_file);
+    }
+    else if(shape == "2d")
+    {
+        float bx = option_parse_result["bx"].as<float>();
+        float by = option_parse_result["by"].as<float>();
+        gp2d.generate_block_and_write(scale, bx, by, n, msh_file, output_file);
     }
     else throw std::runtime_error("incorrect shape");
 
-    gp.IdentifyGrains(scale);
-    gp.Write_HDF5(output_file);
 
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.representation.gp = &gp;
-    w.Process();
-
-    w.showMaximized();
-    return a.exec();
+//    w.representation.gp = &gp;
+//    w.Process();
+//    w.showMaximized();
+//    return a.exec();
 }
