@@ -9,6 +9,8 @@
 #include "grainprocessor.h"
 #include "2d/grainprocessor2d.h"
 
+// -s 2d -n 250000 -o 2d_250k.h5 -m /home/s2/Projects/GrainIdentifier/msh_2d/1k_2d.msh -c 2
+
 int main(int argc, char *argv[])
 {
     gmsh::initialize();
